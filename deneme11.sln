@@ -1,20 +1,79 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp", "Assembly-CSharp.csproj", "{EB50851A-BE24-EF1D-7D6B-0E17305B8C2D}"
-EndProject
-Global
-	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{EB50851A-BE24-EF1D-7D6B-0E17305B8C2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EB50851A-BE24-EF1D-7D6B-0E17305B8C2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EB50851A-BE24-EF1D-7D6B-0E17305B8C2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EB50851A-BE24-EF1D-7D6B-0E17305B8C2D}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-EndGlobal
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine.UI;
+using UnityEngine;
+
+public class envanter : MonoBehaviour
+{
+    public List<itemler> itemleri;
+    public GameObject envanteri;
+    private int sayaç;
+    private int id;
+
+    public void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.tag == "item")
+        {
+            id = collision.GetComponent<esyabilgileri>().id;
+
+            for (int i = 0; i < itemleri.Count; i++)
+            {
+                if (id == itemleri[i].itemid)
+                {
+                    if (itemleri[i].itemsayı <= 16)
+                    {
+                        itemleri[i].itemsayı++;
+                        // Resimde alt kısım kesik ama genel mantık Destroy ile devam ediyor
+                        Destroy(collision.gameObject);
+                        sayaç = 0;
+                        break;
+                    }
+                }
+                else
+                {
+                    sayaç++;
+                }
+            }
+
+            if (sayaç == 16)
+            {
+                for (int a = 0; a < itemleri.Count; a++)
+                {
+                    if (itemleri[a].itemid == 0)
+                    {
+                        itemleri[a].itemresim = collision.GetComponent<esyabilgileri>().itemresim;
+                        envanteri.transform.GetChild(a).GetComponent<Image>().sprite = itemleri[a].itemresim; 
+                        itemleri[a].itemsayı++;
+                        itemleri[a].itemid = id;
+                        Destroy(collision.gameObject);
+                        sayaç= 0; 
+                        break;
+                    }
+                }
+            }
+            // Sayaç mantığına göre işlem bitince sıfırlaman gerekebilir: sayaç = 0;
+        }
+    }
+    public void OnTriggerExit2D(Collider2D collision)
+    {
+        if (collision.tag == "item")
+        {
+            sayaç = 0;
+        }
+    }
+}
+
+[System.Serializable]
+public class itemler
+{
+    public Sprite itemresim;
+    public int itemsayı;
+    public int itemid;
+
+    public itemler(Sprite itemresimi, int itemidsi, int itemsayısı)
+    {
+        itemid = itemidsi;
+        itemsayı = itemsayısı;
+        itemresim = itemresimi;
+    }
+}
