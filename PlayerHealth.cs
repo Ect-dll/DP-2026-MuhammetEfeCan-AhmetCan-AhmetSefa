@@ -7,89 +7,82 @@ public class PlayerHealth : MonoBehaviour
     [Header("Sağlık Ayarları")]
     public int maxHealth = 100;
     public int currentHealth;
-    public Slider healthBar;
+
+    [Header("Can Barı")]
+    public Slider healthBarSlider;  // Slider kullanıyorsan bunu bağla
+    public Image healthBarFill;     // Image/Fill kullanıyorsan bunu bağla
 
     [Header("Düşman Kontrol Ayarları")]
-    public float logInterval = 5f;  // Kaç saniyede bir yazacağı
-    public float checkRadius = 20f; // Düşmanları arayacağı mesafe yarıçapı
+    public float logInterval = 5f;
+    public float checkRadius = 20f;
+    public LayerMask enemyLayer;
+
     private float timer = 0f;
 
     void Start()
     {
         currentHealth = maxHealth;
-
-        // Can barı UI ayarlamaları
-        if (healthBar != null)
-        {
-            healthBar.maxValue = maxHealth;
-            healthBar.value = maxHealth;
-        }
+        UpdateHealthBar();
     }
 
     void Update()
     {
-        // 5 saniyelik zamanlayıcıyı çalıştır
         timer += Time.deltaTime;
-
         if (timer >= logInterval)
         {
-            timer = 0f; // Zamanlayıcıyı sıfırla
+            timer = 0f;
             CheckEnemiesAndLog();
         }
     }
 
-    // Etrafta düşman olup olmadığını kontrol eden fonksiyon
     void CheckEnemiesAndLog()
     {
-        // Karakterin etrafında 'checkRadius' kadar bir alan tarar
-        Collider[] hitColliders = Physics.OverlapSphere(transform.position, checkRadius);
-        bool dusmanVarMi = false;
+        // 2D için OverlapCircleAll kullan
+        Collider2D[] hitColliders = Physics2D.OverlapCircleAll(transform.position, checkRadius, enemyLayer);
 
-        foreach (Collider hit in hitColliders)
-        {
-            // Eğer taranan alan içinde "Enemy" tag'ine sahip biri varsa
-            if (hit.CompareTag("Enemy"))
-            {
-                dusmanVarMi = true;
-                break; // Bir düşman bulmak yeterli, aramayı durdur
-            }
-        }
-
-        // Eğer yakında en az bir düşman varsa canı konsola yazdır
-        if (dusmanVarMi)
+        if (hitColliders.Length > 0)
         {
             Debug.Log("⚠️ DİKKAT: Bölgede düşman var! Oyuncu Canı: " + currentHealth);
         }
     }
 
-    // Karakter hasar aldığında çalışan fonksiyon
     public void TakeDamage(int damage)
     {
         currentHealth -= damage;
-        Debug.Log("Karakter hasar aldi: " + damage + " | Kalan can: " + currentHealth);
+        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth); // 0'ın altına düşmesin
+        Debug.Log("Karakter hasar aldı: " + damage + " | Kalan can: " + currentHealth);
 
-        // Can barını güncelle
-        if (healthBar != null)
-        {
-            healthBar.value = currentHealth;
-        }
+        UpdateHealthBar();
 
-        // Can sıfırlandıysa öl
         if (currentHealth <= 0)
         {
             Die();
         }
     }
 
+    // Can barını iki yöntemle de güncelleyebilir
+    void UpdateHealthBar()
+    {
+        float oran = (float)currentHealth / maxHealth;
+
+        if (healthBarSlider != null)
+        {
+            healthBarSlider.maxValue = maxHealth;
+            healthBarSlider.value = currentHealth;
+        }
+
+        if (healthBarFill != null)
+        {
+            healthBarFill.fillAmount = oran;
+        }
+    }
+
     void Die()
     {
         Debug.Log("Karakter öldü! Sahne yeniden yükleniyor...");
-
-        // Sahneyi yeniden yükle
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
-    // Unity Editöründe düşman arama mesafeni kırmızı bir küre olarak görmeni sağlar
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;

@@ -3,9 +3,9 @@ using UnityEngine;
 public class EnemyAI : MonoBehaviour
 {
     public Transform player;
-    public float moveSpeed = 2f;
-    public float followRange = 8f;
-    public float attackRange = 1.2f;
+    public float moveSpeed;
+    public float followRange;
+    public float attackRange;
     public int damage = 10;
     public float attackCooldown = 1f;
 
@@ -15,26 +15,40 @@ public class EnemyAI : MonoBehaviour
     private float lastAttackTime;
     private Rigidbody2D rb;
 
+    private Vector3 baslangicBoyutu;
+
     void Start()
     {
+        // --- TEST İÇİN DEĞERLERİ ZORLA VERİYORUZ (Inspector'ı ezer) ---
+        moveSpeed = 40f;      // Hızı zorla 40 yaptık
+        followRange = 500f;   // Dünyanın öbür ucundan görsün
+        attackRange = 4f;     // Vurma mesafesini garantiye aldık
+        // --------------------------------------------------------------
+
         rb = GetComponent<Rigidbody2D>();
         currentHealth = maxHealth;
+        baslangicBoyutu = transform.localScale;
 
-        // Yerçekimi kontrolü — bu olmazsa düşman havada kalır
         if (rb.gravityScale == 0f)
         {
-            rb.gravityScale = 3f; // İstediğin değere ayarla
-            Debug.LogWarning(gameObject.name + ": GravityScale 0'dı, 3 yapıldı!");
+            rb.gravityScale = 3f;
         }
 
-        // Rigidbody2D Constraints: Rotation Z'yi kilitle (devrilmesin)
         rb.constraints = RigidbodyConstraints2D.FreezeRotation;
 
+        // KARAKTERİ BULMA TESTİ
         if (player == null)
         {
             GameObject target = GameObject.Find("karakter");
             if (target != null)
+            {
                 player = target.transform;
+                Debug.Log(gameObject.name + ": Karakteri buldum! Hedefe kilitlendim.");
+            }
+            else
+            {
+                Debug.LogError(gameObject.name + ": DİKKAT! 'karakter' isimli objeyi sahnede bulamıyorum! İsmi yanlış olabilir.");
+            }
         }
     }
 
@@ -57,18 +71,16 @@ public class EnemyAI : MonoBehaviour
     {
         Vector2 direction = (player.position - transform.position).normalized;
 
-        // Y'ye dokunma → yerçekimi çalışsın
         rb.linearVelocity = new Vector2(direction.x * moveSpeed, rb.linearVelocity.y);
 
         if (direction.x > 0)
-            transform.localScale = new Vector3(1, 1, 1);
+            transform.localScale = new Vector3(Mathf.Abs(baslangicBoyutu.x), baslangicBoyutu.y, baslangicBoyutu.z);
         else if (direction.x < 0)
-            transform.localScale = new Vector3(-1, 1, 1);
+            transform.localScale = new Vector3(-Mathf.Abs(baslangicBoyutu.x), baslangicBoyutu.y, baslangicBoyutu.z);
     }
 
     void StopMoving()
     {
-        // Sadece X'i durdur, Y'yi (yerçekimi) serbest bırak
         rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
     }
 
@@ -80,8 +92,10 @@ public class EnemyAI : MonoBehaviour
         {
             PlayerHealth health = player.GetComponent<PlayerHealth>();
             if (health != null)
+            {
                 health.TakeDamage(damage);
-
+                Debug.Log("Düşman GÜM diye vurdu!");
+            }
             lastAttackTime = Time.time;
         }
     }
